@@ -32,9 +32,20 @@ export default function Home() {
     address: "0x0f3cec48434f7A9C4a68C3C8eAbfD6C03D96370e",
   });
 
-  // Get active claim condition directly
   const { data: claimCondition } = useReadContract(getActiveClaimCondition, {
     contract,
+  });
+
+  const { data: claimId, isLoading: isClaimIdLoading } = useReadContract({
+    contract,
+    method: "function getActiveClaimConditionId() public view returns (uint256)",
+    params: [],
+  });
+
+  const { data: supplyClaimed, isLoading: isSupplyClaimedLoading } = useReadContract({
+    contract,
+    method: "function getSupplyClaimedByWallet(uint256 conditionId, address claimer) public view returns (uint256)",
+    params: [claimId ?? 0n, account?.address ?? ""],
   });
 
   const { data: contractMetadata, isLoading: isContractMetadataLoading } =
@@ -46,18 +57,27 @@ export default function Home() {
   const { data: totalNFTSupply, isLoading: isTotalSupplyLoading } =
     useReadContract(nextTokenIdToMint, { contract: contract });
 
+  useEffect(() => {
+    if (account !== undefined) {
+      console.log("claimId: ", claimId);
+      console.log("supplyClaimed: ", supplyClaimed);
+    }
+  }, [account, claimId, supplyClaimed]);
+
   const getPrice = (quantity: number) => {
     const total =
       quantity * parseInt(claimCondition?.pricePerToken.toString() || "0");
     return toEther(BigInt(total));
   };
-
+  console.log("claimId: ", claimId);
+  console.log("supplyClaimed: ", supplyClaimed);
   console.log("Claim condition:", claimCondition);
 
-  // Get max claimable from claim condition
-  const maxClaimable = claimCondition?.maxClaimablePerWallet
-    ? Number(claimCondition.maxClaimablePerWallet)
     : 0;
+
+  if (isClaimIdLoading || isSupplyClaimedLoading) {
+    return <div>Loading claim data...</div>;
+  }
 
   return (
     <main className="p-4 pb-10 min-h-[100vh] flex items-center justify-center container max-w-screen-lg mx-auto">
