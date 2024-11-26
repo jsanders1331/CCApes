@@ -35,6 +35,22 @@ export default function Home() {
     address: "0x0f3cec48434f7A9C4a68C3C8eAbfD6C03D96370e",
   });
 
+  const { data: claimCondition } = useReadContract(getActiveClaimCondition, {
+    contract,
+  });
+
+  const { data: claimId, isLoading: isClaimIdLoading } = useReadContract({
+    contract,
+    method: "function getActiveClaimConditionId() public view returns (uint256)",
+    params: [],
+  });
+
+  const { data: supplyClaimed, isLoading: isSupplyClaimedLoading } = useReadContract({
+    contract,
+    method: "function getSupplyClaimedByWallet(uint256 conditionId, address claimer) public view returns (uint256)",
+    params: [claimId ?? 0n, account?.address ?? ""],
+  });
+
   const { data: contractMetadata, isLoading: isContractMetadataLoading } =
     useReadContract(getContractMetadata, { contract: contract });
 
@@ -44,27 +60,27 @@ export default function Home() {
   const { data: totalNFTSupply, isLoading: isTotalSupplyLoading } =
     useReadContract(nextTokenIdToMint, { contract: contract });
 
-  const { data: currentNFT, isLoading: isCurrentNFTLoading } = useReadContract(
-    getNFT,
-    {
-      contract: contract,
-      tokenId: claimedSupply ? BigInt(claimedSupply.toString()) : BigInt(0),
-      includeOwner: true,
+  useEffect(() => {
+    if (account !== undefined) {
+      console.log("claimId: ", claimId);
+      console.log("supplyClaimed: ", supplyClaimed);
     }
-  );
-
-  const { data: claimCondition } = useReadContract(getActiveClaimCondition, {
-    contract: contract,
-  });
+  }, [account, claimId, supplyClaimed]);
 
   const getPrice = (quantity: number) => {
     const total =
       quantity * parseInt(claimCondition?.pricePerToken.toString() || "0");
     return toEther(BigInt(total));
   };
+  console.log("claimId: ", claimId);
+  console.log("supplyClaimed: ", supplyClaimed);
+  console.log("Claim condition:", claimCondition);
 
-  // Assuming max allocation is 6 for this example - you might want to get this from the contract
-  const maxAllocation = 6;
+    : 0;
+
+  if (isClaimIdLoading || isSupplyClaimedLoading) {
+    return <div>Loading claim data...</div>;
+  }
 
   return (
     <main className="p-4 pb-10 min-h-[100vh] flex items-center justify-center container max-w-screen-lg mx-auto">
