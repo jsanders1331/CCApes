@@ -8,14 +8,17 @@ import {
   useActiveAccount,
   useReadContract,
 } from "thirdweb/react";
+import thirdwebIcon from "@public/thirdweb.svg";
 import { client } from "./client";
 import { defineChain, getContract, toEther } from "thirdweb";
+import { sepolia } from "thirdweb/chains";
 import { getContractMetadata } from "thirdweb/extensions/common";
 import {
   claimTo,
   getActiveClaimCondition,
   getTotalClaimedSupply,
   nextTokenIdToMint,
+  getNFT,
 } from "thirdweb/extensions/erc721";
 import { useState, useEffect } from "react";
 import TypingText from "./components/TypingText";
@@ -32,11 +35,6 @@ export default function Home() {
     address: "0x0f3cec48434f7A9C4a68C3C8eAbfD6C03D96370e",
   });
 
-  // Get active claim condition directly
-  const { data: claimCondition } = useReadContract(getActiveClaimCondition, {
-    contract,
-  });
-
   const { data: contractMetadata, isLoading: isContractMetadataLoading } =
     useReadContract(getContractMetadata, { contract: contract });
 
@@ -46,18 +44,27 @@ export default function Home() {
   const { data: totalNFTSupply, isLoading: isTotalSupplyLoading } =
     useReadContract(nextTokenIdToMint, { contract: contract });
 
+  const { data: currentNFT, isLoading: isCurrentNFTLoading } = useReadContract(
+    getNFT,
+    {
+      contract: contract,
+      tokenId: claimedSupply ? BigInt(claimedSupply.toString()) : BigInt(0),
+      includeOwner: true,
+    }
+  );
+
+  const { data: claimCondition } = useReadContract(getActiveClaimCondition, {
+    contract: contract,
+  });
+
   const getPrice = (quantity: number) => {
     const total =
       quantity * parseInt(claimCondition?.pricePerToken.toString() || "0");
     return toEther(BigInt(total));
   };
 
-  console.log("Claim condition:", claimCondition);
-
-  // Get max claimable from claim condition
-  const maxClaimable = claimCondition?.maxClaimablePerWallet
-    ? Number(claimCondition.maxClaimablePerWallet)
-    : 0;
+  // Assuming max allocation is 6 for this example - you might want to get this from the contract
+  const maxAllocation = 6;
 
   return (
     <main className="p-4 pb-10 min-h-[100vh] flex items-center justify-center container max-w-screen-lg mx-auto">
@@ -78,7 +85,7 @@ export default function Home() {
                 {/* Left side - Allocation info */}
                 <div className="text-left font-mono">
                   <div className="mb-2">
-                    Wallet Allocated: {maxClaimable} Jungles
+                    Wallet Allocated: {maxAllocation} Jungles
                   </div>
                   <div>mint price per: {getPrice(1)} APE</div>
                 </div>
@@ -123,19 +130,13 @@ export default function Home() {
                   <input
                     type="number"
                     value={quantity}
-                    onChange={(e) => {
-                      const newQuantity = parseInt(e.target.value);
-                      if (newQuantity <= maxClaimable) {
-                        setQuantity(newQuantity);
-                      }
-                    }}
-                    max={maxClaimable}
+                    onChange={(e) => setQuantity(parseInt(e.target.value))}
                     className="w-16 text-center border border-gray-300 rounded-md bg-black text-white p-2 font-mono"
                   />
                   <button
                     className="bg-black text-white px-4 py-2 rounded-md"
                     onClick={() =>
-                      setQuantity(Math.min(maxClaimable, quantity + 1))
+                      setQuantity(Math.min(maxAllocation, quantity + 1))
                     }
                   >
                     +
@@ -157,7 +158,7 @@ export default function Home() {
                   }}
                   className="bg-black text-white px-6 py-2 rounded-md font-mono hover:bg-gray-800"
                 >
-                  buy 🦊
+                  buy
                 </TransactionButton>
               </div>
             </>
