@@ -10,7 +10,7 @@ const TypingText = () => {
       const timeout = setTimeout(() => {
         setText(text + fullText[index]);
         setIndex(index + 1);
-      }, 100); // Controls typing speed
+      }, 70); // Controls typing speed
 
       return () => clearTimeout(timeout);
     }
