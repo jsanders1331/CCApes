@@ -28,6 +28,7 @@ type SequenceState = "initial" | "allowlisted" | "notAllowlisted" | "minted";
 // Static snapshot data
 const SNAPSHOT_DATA: { [key: string]: number } = {
   "0x6A921d0494b66cFD3e53Bfc1b8a868403a23cD9b": 2,
+  "0x1916538F7Fd71163245e742537CD8e26EF967EbF": 3,
   "0x000000000000000000000000000000000000dEaD": 5,
 };
 
