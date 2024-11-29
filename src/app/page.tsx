@@ -19,6 +19,7 @@ import {
 } from "thirdweb/extensions/erc721";
 import { useState, useEffect } from "react";
 import TypingText from "./components/TypingText";
+import LoadingSquares from "./components/LoadingSquares";
 import "./styles.css";
 import { max } from "thirdweb/utils";
 
@@ -37,6 +38,8 @@ export default function Home() {
   const [walletMaxClaimable, setWalletMaxClaimable] = useState(0);
   const [sequence, setSequence] = useState<SequenceState>("initial");
   const [mintedAmount, setMintedAmount] = useState(0);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isTransitioning, setIsTransitioning] = useState(false);
 
   const contract = getContract({
     client: client,
@@ -71,6 +74,26 @@ export default function Home() {
 
   const { data: totalNFTSupply, isLoading: isTotalSupplyLoading } =
     useReadContract(nextTokenIdToMint, { contract: contract });
+
+  // Initial loading effect
+  useEffect(() => {
+    setIsLoading(true);
+    const timer = setTimeout(() => {
+      setIsLoading(false);
+    }, 1500);
+    return () => clearTimeout(timer);
+  }, []);
+
+  // Transition effect when sequence changes
+  useEffect(() => {
+    if (sequence !== "initial") {
+      setIsTransitioning(true);
+      const timer = setTimeout(() => {
+        setIsTransitioning(false);
+      }, 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [sequence]);
 
   // Calculate maxClaimable based on snapshot data and already claimed supply
   useEffect(() => {
@@ -114,9 +137,13 @@ export default function Home() {
   }, [walletMaxClaimable]);
 
   const resetSequence = () => {
-    setSequence("initial");
-    setQuantity(1);
-    setMintedAmount(0);
+    setIsTransitioning(true);
+    setTimeout(() => {
+      setSequence("initial");
+      setQuantity(1);
+      setMintedAmount(0);
+      setIsTransitioning(false);
+    }, 1000);
   };
 
   const renderInitialContent = () => (
@@ -156,10 +183,10 @@ export default function Home() {
           />
         </div>
       </div>
-      <p className=" mb-4">Reveal is scheduled for 6:00PM EST 24/11/2024</p>
+      <p className="mb-4">Reveal is scheduled for 6:00PM EST 24/11/2024</p>
       <button
         onClick={resetSequence}
-        className="mt-4 bg-black text-white px-6 py-2 rounded-md  hover:bg-gray-800"
+        className="mt-4 bg-black text-white px-6 py-2 rounded-md hover:bg-gray-800"
       >
         Go Back
       </button>
@@ -169,12 +196,12 @@ export default function Home() {
   const renderMintInterface = () => (
     <div className="flex flex-col items-center mt-4">
       {isContractMetadataLoading ? (
-        <p>Loading...</p>
+        <LoadingSquares />
       ) : (
         <>
           <div className="flex items-center justify-center space-x-8 mt-8">
             <div className="text-left text-2xl">
-              <div className="mb-2 ">
+              <div className="mb-2">
                 Wallet Allocated: {walletMaxClaimable} Jungles
               </div>
               <div>mint price per: {getPrice(1)} APE</div>
@@ -197,11 +224,11 @@ export default function Home() {
               </div>
             </div>
 
-            <div className=" text-2xl">x {quantity}</div>
+            <div className="text-2xl">x {quantity}</div>
           </div>
 
           <div className="mt-8">
-            <div className=" mb-4 text-lg">
+            <div className="mb-4 text-xl">
               <div>Amount: {quantity}</div>
               <div>Price: {getPrice(quantity)} APE</div>
             </div>
@@ -223,10 +250,9 @@ export default function Home() {
                   }
                 }}
                 max={walletMaxClaimable}
-                className="w-16 text-center border border-gray-300 rounded-md bg-black text-white p-2 "
+                className="w-16 text-center border border-gray-300 rounded-md bg-black text-white p-2"
                 disabled={walletMaxClaimable === 0}
               />
-
               <button
                 className="bg-black text-white px-4 py-2 rounded-md"
                 onClick={() => setQuantity(Math.min(quantity + 1))}
@@ -234,11 +260,6 @@ export default function Home() {
                 +
               </button>
             </div>
-            {walletMaxClaimable === 0 && (
-              <div className="text-red-500">
-                You have reached your max claimable amount
-              </div>
-            )}
 
             <TransactionButton
               transaction={() =>
@@ -249,8 +270,12 @@ export default function Home() {
                 })
               }
               onTransactionConfirmed={async () => {
-                setMintedAmount(quantity);
-                setSequence("minted");
+                setIsTransitioning(true);
+                setTimeout(() => {
+                  setMintedAmount(quantity);
+                  setSequence("minted");
+                  setIsTransitioning(false);
+                }, 1000);
               }}
               className="bg-black text-white text-2xl px-6 py-2 font-mono hover:bg-gray-800 opacity-100"
               style={{
@@ -264,7 +289,7 @@ export default function Home() {
               }}
               disabled={walletMaxClaimable === 0}
             >
-              <div className="flex items-center justify-center" style={{}}>
+              <div className="flex items-center justify-center">
                 buy
                 <Image
                   alt="city_icon"
@@ -275,12 +300,21 @@ export default function Home() {
               </div>
             </TransactionButton>
           </div>
+          {walletMaxClaimable === 0 && (
+            <div className="text-red-500 mt-4">
+              You have reached your max claimable amount
+            </div>
+          )}
         </>
       )}
     </div>
   );
 
   const renderContent = () => {
+    if (isLoading || isTransitioning) {
+      return <LoadingSquares />;
+    }
+
     switch (sequence) {
       case "initial":
         return renderInitialContent();
@@ -312,11 +346,11 @@ function Header() {
   return (
     <div className="flex flex-col items-center text-center">
       <header className="flex flex-row items-center">
-        <h1 className="text-2xl md:text-6xl font-semibold md:font-bold tracking-tighter mb-6 text-black-100">
+        <h1 className="text-3xl md:text-7xl tracking-tighter mb-6 text-black-100">
           EVERY APE NEEDS <br />A<br /> JUNGLE
         </h1>
       </header>
-      <h2 className="text-lg md:text-2xl text-black-300">MINT PORTAL</h2>
+      <h2 className="text-xl md:text-3xl text-black-300">MINT PORTAL</h2>
     </div>
   );
 }
