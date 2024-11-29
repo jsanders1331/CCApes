@@ -302,7 +302,7 @@ export default function Home() {
           </div>
           {walletMaxClaimable === 0 && (
             <div className="text-red-500 mt-4">
-              You have reached your max claimable amount
+              You have reached your max claimable amount.
             </div>
           )}
         </>
