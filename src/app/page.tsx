@@ -360,7 +360,7 @@ function Header2() {
     <div className="flex flex-col items-center text-center">
       <header className="flex flex-row items-center">
         <div className="text-3xl md:text-7xl font-light tracking-tighter mb-6 text-black-100">
-          You're on the <br></br> allowlist!
+          You&#39;re on the <br></br> allowlist!
         </div>
       </header>
     </div>
