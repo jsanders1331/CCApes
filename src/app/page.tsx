@@ -256,9 +256,11 @@ export default function Home() {
               />
               <button
                 className="bg-black text-white px-4 py-2 rounded-md"
-                onClick={() =>
-                  setQuantity(Math.min(quantity + 1, walletMaxClaimable + 1))
-                }
+                onClick={() => {
+                  const adjustedMaxClaimable =
+                    walletMaxClaimable === 0 ? 1 : walletMaxClaimable;
+                  setQuantity(Math.min(quantity + 1, adjustedMaxClaimable));
+                }}
               >
                 +
               </button>
